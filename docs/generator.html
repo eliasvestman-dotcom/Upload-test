@@ -360,43 +360,43 @@
         <a href="index.html" class="home-link">← Back to Home</a>
         
         <h1>🚀 GitHub Test Data Generator</h1>
-        <p class="subtitle">Generate customizable nested folders and files for your repository</p>
+        <p class="subtitle">Generate unlimited nested folders and files for your repository</p>
 
         <form id="configForm">
             <div class="form-group">
                 <label for="depth">📁 Folder Depth (levels)</label>
                 <div class="input-wrapper">
-                    <input type="number" id="depth" name="depth" min="1" max="50" value="3">
+                    <input type="number" id="depth" name="depth" min="1" value="3">
                     <div class="value-display" id="depthDisplay">3</div>
                 </div>
-                <div class="info-box">Max 50 levels (GitHub limit). How deep to nest folders.</div>
+                <div class="info-box">How deep to nest folders (unlimited).</div>
             </div>
 
             <div class="form-group">
                 <label for="foldersPerLevel">📂 Folders Per Level</label>
                 <div class="input-wrapper">
-                    <input type="number" id="foldersPerLevel" name="foldersPerLevel" min="1" max="100" value="3">
+                    <input type="number" id="foldersPerLevel" name="foldersPerLevel" min="1" value="3">
                     <div class="value-display" id="foldersDisplay">3</div>
                 </div>
-                <div class="info-box">Number of folders to create at each level.</div>
+                <div class="info-box">Number of folders to create at each level (unlimited).</div>
             </div>
 
             <div class="form-group">
                 <label for="filesPerFolder">📄 Files Per Folder</label>
                 <div class="input-wrapper">
-                    <input type="number" id="filesPerFolder" name="filesPerFolder" min="1" max="500" value="5">
+                    <input type="number" id="filesPerFolder" name="filesPerFolder" min="1" value="5">
                     <div class="value-display" id="filesDisplay">5</div>
                 </div>
-                <div class="info-box">Number of files to create in each folder.</div>
+                <div class="info-box">Number of files to create in each folder (unlimited).</div>
             </div>
 
             <div class="form-group">
                 <label for="fileSize">📦 File Size (MB)</label>
                 <div class="input-wrapper">
-                    <input type="number" id="fileSize" name="fileSize" min="0.1" max="50" step="0.1" value="0.5">
+                    <input type="number" id="fileSize" name="fileSize" min="0.1" step="0.1" value="0.5">
                     <div class="value-display" id="sizeDisplay">0.5 MB</div>
                 </div>
-                <div class="info-box">Max 100 MB per file (GitHub limit). We stay under 50 MB.</div>
+                <div class="info-box">Size of each file in MB (unlimited).</div>
             </div>
 
             <div class="stats">
@@ -489,15 +489,19 @@
             if (totalFiles > 10000) timeEstimate = '~5-10 sec';
             if (totalFiles > 50000) timeEstimate = '~30-60 sec';
             if (totalFiles > 100000) timeEstimate = '~2-5 min';
+            if (totalFiles > 1000000) timeEstimate = '~5-10+ min';
             document.getElementById('estimatedTime').textContent = timeEstimate;
 
             // Show warnings
-            if (totalSizeGB > 3) {
+            if (totalSizeGB > 100) {
                 warningBox.classList.add('show');
-                document.getElementById('warningText').textContent = `⚠️ Generated data would be ${totalSizeGB.toFixed(2)} GB. GitHub recommends < 3 GB. Consider reducing file size or depth.`;
-            } else if (totalFiles > 100000) {
+                document.getElementById('warningText').textContent = `⚠️ Very large generation: ${totalSizeGB.toFixed(2)} GB. May take a long time and significant browser memory.`;
+            } else if (totalSizeGB > 10) {
                 warningBox.classList.add('show');
-                document.getElementById('warningText').textContent = `⚠️ ${totalFiles.toLocaleString()} files may take a while to process.`;
+                document.getElementById('warningText').textContent = `⚠️ Large generation: ${totalSizeGB.toFixed(2)} GB. May take several minutes to generate.`;
+            } else if (totalFiles > 1000000) {
+                warningBox.classList.add('show');
+                document.getElementById('warningText').textContent = `⚠️ ${totalFiles.toLocaleString()} files will take a considerable amount of time to process.`;
             } else {
                 warningBox.classList.remove('show');
             }
