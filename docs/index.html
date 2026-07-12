@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Test - Repository Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .navbar-brand {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .navbar-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .navbar-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .navbar-links a:hover {
+            background: #f0f4ff;
+            color: #764ba2;
+        }
+
+        .main-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .card-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .card-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .card-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .stats-grid {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .features {
+            grid-column: 1 / -1;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .features-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .feature-item {
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .feature-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .feature-desc {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .github-section {
+            grid-column: 1 / -1;
+            background: #2d333b;
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .github-section h2 {
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .github-links {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .github-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .github-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .github-link a {
+            color: #58a6ff;
+            text-decoration: none;
+            flex: 1;
+            word-break: break-all;
+        }
+
+        .github-link a:hover {
+            text-decoration: underline;
+        }
+
+        .copy-btn {
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        .copy-btn:hover {
+            background: #2ea043;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .navbar-links {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-brand">🚀 Upload Test</div>
+        <div class="navbar-links">
+            <a href="https://github.com/eliasvestman-dotcom/Upload-test" target="_blank">📦 GitHub</a>
+            <a href="#generator">📝 Generator</a>
+            <a href="#docs">📚 Docs</a>
+        </div>
+    </div>
+
+    <div class="main-grid">
+        <!-- Generator Card -->
+        <div class="card">
+            <div class="card-icon">⚙️</div>
+            <div class="card-title">Test Data Generator</div>
+            <div class="card-description">
+                Generate customizable nested folder and file structures directly in your browser. Configure depth, file count, folder count, and sizes.
+            </div>
+            <div class="info-box">
+                ✨ No installation required • Runs entirely in browser • GitHub TOS compliant
+            </div>
+            <a href="generator.html" class="card-button">→ Open Generator</a>
+        </div>
+
+        <!-- Repository Card -->
+        <div class="card">
+            <div class="card-icon">📦</div>
+            <div class="card-title">GitHub Repository</div>
+            <div class="card-description">
+                Access the Upload-test repository on GitHub. Contains scripts, documentation, and deployment configurations for testing.
+            </div>
+            <div class="info-box">
+                🔗 Public repository • Open source • Ready to fork
+            </div>
+            <a href="https://github.com/eliasvestman-dotcom/Upload-test" target="_blank" class="card-button">→ View on GitHub</a>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">50+</div>
+                <div class="stat-label">Depth Levels Supported</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">100 MB</div>
+                <div class="stat-label">Max File Size</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">3 GB</div>
+                <div class="stat-label">Recommended Repo Size</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">3,000</div>
+                <div class="stat-label">Entries Per Folder</div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="features" id="docs">
+            <h2 class="features-title">✨ Features</h2>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">🎚️</div>
+                    <div class="feature-name">Fully Customizable</div>
+                    <div class="feature-desc">Adjust folder depth, files per folder, folder count, and file sizes to match your needs.</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-name">Live Preview</div>
+                    <div class="feature-desc">See estimated total files and size before generating. Real-time calculations.</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">⚠️</div>
+                    <div class="feature-name">Safety Warnings</div>
+                    <div class="feature-desc">Alerts if configuration exceeds GitHub's TOS limits. Stay compliant automatically.</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📥</div>
+                    <div class="feature-name">ZIP Download</div>
+                    <div class="feature-desc">Get compressed test data instantly. Ready to extract into your repository.</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🌐</div>
+                    <div class="feature-name">Browser Based</div>
+                    <div class="feature-desc">No installation needed. Runs entirely in your browser. Works offline too.</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🔒</div>
+                    <div class="feature-name">Private & Secure</div>
+                    <div class="feature-desc">All processing happens locally. No data sent to any server. Your data stays yours.</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-name">Fast Generation</div>
+                    <div class="feature-desc">Generate thousands of files in seconds. Progress tracking included.</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📖</div>
+                    <div class="feature-name">Well Documented</div>
+                    <div class="feature-desc">Comprehensive README with examples and best practices. Python CLI also available.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GitHub Section -->
+        <div class="github-section">
+            <h2>🔗 GitHub Resources</h2>
+            <div class="github-links">
+                <div class="github-link">
+                    <span>📦 Repository:</span>
+                    <a href="https://github.com/eliasvestman-dotcom/Upload-test" target="_blank">
+                        https://github.com/eliasvestman-dotcom/Upload-test
+                    </a>
+                    <button class="copy-btn" onclick="copyToClipboard('https://github.com/eliasvestman-dotcom/Upload-test')">Copy</button>
+                </div>
+                <div class="github-link">
+                    <span>🌐 GitHub Pages:</span>
+                    <a href="https://eliasvestman-dotcom.github.io/Upload-test/" target="_blank">
+                        https://eliasvestman-dotcom.github.io/Upload-test/
+                    </a>
+                    <button class="copy-btn" onclick="copyToClipboard('https://eliasvestman-dotcom.github.io/Upload-test/')">Copy</button>
+                </div>
+                <div class="github-link">
+                    <span>🧑‍💻 Owner:</span>
+                    <a href="https://github.com/eliasvestman-dotcom" target="_blank">
+                        @eliasvestman-dotcom
+                    </a>
+                    <button class="copy-btn" onclick="copyToClipboard('eliasvestman-dotcom')">Copy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>🎉 GitHub Test Data Generator • Built for <strong>eliasvestman-dotcom</strong></p>
+        <p style="margin-top: 10px; opacity: 0.6;">Made with ❤️ for testing and development</p>
+    </div>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ Copied to clipboard!');
+            }).catch(err => {
+                console.error('Copy failed:', err);
+            });
+        }
+    </script>
+</body>
+</html>
