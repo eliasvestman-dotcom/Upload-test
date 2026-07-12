@@ -215,6 +215,33 @@
             margin-top: 30px;
         }
 
+        .progress-stages {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stage {
+            flex: 1;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .stage.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .stage.completed {
+            background: #28a745;
+            color: white;
+        }
+
         .progress-bar {
             width: 100%;
             height: 8px;
@@ -385,6 +412,10 @@
                 min-width: auto;
                 text-align: left;
             }
+
+            .progress-stages {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -460,7 +491,17 @@
                 </div>
             </form>
 
-            <div class="progress-section" id="progressSection"></div>
+            <div class="progress-section" id="progressSection">
+                <div class="progress-stages">
+                    <div class="stage" id="stageFolders">📁 Folders</div>
+                    <div class="stage" id="stageFiles">📄 Files</div>
+                    <div class="stage" id="stageZip">📦 ZIP</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">Starting...</div>
+            </div>
             <div class="output-section" id="outputSection"></div>
             <div class="github-links" id="githubLinks"></div>
         </div>
@@ -534,12 +575,35 @@
                 </div>
             </form>
 
-            <div class="progress-section" id="uploadProgressSection"></div>
+            <div class="progress-section" id="uploadProgressSection">
+                <div class="progress-stages">
+                    <div class="stage" id="uploadStageFolders">📁 Folders</div>
+                    <div class="stage" id="uploadStageFiles">📄 Files</div>
+                    <div class="stage" id="uploadStageZip">📦 ZIP</div>
+                    <div class="stage" id="uploadStageUpload">☁️ Upload</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="uploadProgressFill"></div>
+                </div>
+                <div class="progress-text" id="uploadProgressText">Starting...</div>
+            </div>
             <div class="output-section" id="uploadOutputSection"></div>
         </div>
     </div>
 
     <script>
+        const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+        function generateName(index) {
+            let name = '';
+            let num = index;
+            while (num >= 0) {
+                name = chars[num % chars.length] + name;
+                num = Math.floor(num / chars.length) - 1;
+            }
+            return name;
+        }
+
         function switchMode(mode) {
             document.querySelectorAll('.mode-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
@@ -556,7 +620,6 @@
         const generateBtn = document.getElementById('generateBtn');
         const progressSection = document.getElementById('progressSection');
         const outputSection = document.getElementById('outputSection');
-        const githubLinks = document.getElementById('githubLinks');
         const warningBox = document.getElementById('warningBox');
 
         function updateDownloadStats() {
@@ -576,21 +639,18 @@
             document.getElementById('estimatedFiles').textContent = totalFiles.toLocaleString();
             document.getElementById('estimatedSize').textContent = totalSizeGB.toFixed(2) + ' GB';
 
-            let timeEstimate = '~1-2 sec';
-            if (totalFiles > 10000) timeEstimate = '~5-10 sec';
+            let timeEstimate = '~2-5 sec';
+            if (totalFiles > 10000) timeEstimate = '~10-20 sec';
             if (totalFiles > 50000) timeEstimate = '~30-60 sec';
             if (totalFiles > 100000) timeEstimate = '~2-5 min';
             document.getElementById('estimatedTime').textContent = timeEstimate;
 
             warningBox.innerHTML = '';
             if (totalSizeGB > 100) {
-                warningBox.innerHTML = `⚠️ Very large: ${totalSizeGB.toFixed(2)} GB. May take a long time and significant memory.`;
+                warningBox.innerHTML = `⚠️ Very large: ${totalSizeGB.toFixed(2)} GB. May take a long time.`;
                 warningBox.classList.add('show');
             } else if (totalSizeGB > 10) {
                 warningBox.innerHTML = `⚠️ Large: ${totalSizeGB.toFixed(2)} GB. May take several minutes.`;
-                warningBox.classList.add('show');
-            } else if (totalFiles > 1000000) {
-                warningBox.innerHTML = `⚠️ ${totalFiles.toLocaleString()} files will take considerable time.`;
                 warningBox.classList.add('show');
             }
         }
@@ -664,6 +724,24 @@
             return data;
         }
 
+        function updateStage(stageName, isActive) {
+            const stage = document.getElementById(stageName);
+            if (isActive) {
+                stage.classList.add('active');
+                stage.classList.remove('completed');
+            }
+        }
+
+        function completeStage(stageName) {
+            const stage = document.getElementById(stageName);
+            stage.classList.remove('active');
+            stage.classList.add('completed');
+        }
+
+        async function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
         async function generateAndDownload() {
             const depth = parseInt(depthInput.value);
             const folders = parseInt(foldersInput.value);
@@ -674,45 +752,83 @@
             progressSection.style.display = 'block';
             outputSection.innerHTML = '';
             outputSection.classList.add('show');
-            githubLinks.innerHTML = '';
-            githubLinks.classList.remove('show');
 
             addDownloadLog('🚀 Starting generation...', 'info');
 
             try {
                 const jsZip = await loadJSZip();
                 const zip = new jsZip.JSZip();
+                const totalFolders = Math.pow(folders, depth) - 1;
                 const totalItems = files * Math.pow(folders, depth);
-                let currentItem = 0;
+                let folderCount = 0;
+                let fileCount = 0;
 
-                function generateFolders(path, currentDepth) {
+                // STAGE 1: CREATE FOLDERS
+                addDownloadLog('📁 Stage 1: Creating folder structure...', 'info');
+                updateStage('stageFolders', true);
+
+                function createFolders(path, currentDepth) {
                     if (currentDepth > depth) return;
                     for (let f = 0; f < folders; f++) {
-                        const folderPath = path ? `${path}/level_${currentDepth}_folder_${String(f).padStart(3, '0')}` : `level_${currentDepth}_folder_${String(f).padStart(3, '0')}`;
-                        for (let file = 0; file < files; file++) {
-                            const filePath = `${folderPath}/file_${String(file).padStart(3, '0')}.txt`;
-                            zip.file(filePath, generateRandomData(fileSize));
-                            currentItem++;
-                            const progress = (currentItem / totalItems) * 100;
-                            document.getElementById('progressFill').style.width = progress + '%';
-                            document.getElementById('progressText').textContent = `${currentItem}/${totalItems.toLocaleString()} files (${progress.toFixed(1)}%)`;
-                        }
-                        if (currentDepth < depth) generateFolders(folderPath, currentDepth + 1);
+                        const folderPath = path ? `${path}/f${generateName(f)}` : `f${generateName(f)}`;
+                        zip.folder(folderPath);
+                        folderCount++;
+                        
+                        const progress = (folderCount / totalFolders) * 50;
+                        document.getElementById('progressFill').style.width = progress + '%';
+                        document.getElementById('progressText').textContent = `Folders: ${folderCount}/${totalFolders}`;
+                    }
+                    for (let f = 0; f < folders; f++) {
+                        const folderPath = path ? `${path}/f${generateName(f)}` : `f${generateName(f)}`;
+                        if (currentDepth < depth) createFolders(folderPath, currentDepth + 1);
                     }
                 }
 
-                generateFolders('test_data', 1);
-                addDownloadLog(`✅ Creating ZIP with ${totalItems.toLocaleString()} files...`, 'success');
+                createFolders('', 1);
+                completeStage('stageFolders');
+                addDownloadLog(`✅ Created folder structure (${folderCount} folders)`, 'success');
+
+                // STAGE 2: CREATE FILES
+                addDownloadLog('📄 Stage 2: Creating files...', 'info');
+                updateStage('stageFiles', true);
+
+                function createFiles(path, currentDepth) {
+                    if (currentDepth > depth) return;
+                    for (let f = 0; f < folders; f++) {
+                        const folderPath = path ? `${path}/f${generateName(f)}` : `f${generateName(f)}`;
+                        for (let file = 0; file < files; file++) {
+                            const filePath = `${folderPath}/f${generateName(file)}.txt`;
+                            zip.file(filePath, generateRandomData(fileSize));
+                            fileCount++;
+                            
+                            const progress = 50 + (fileCount / totalItems) * 50;
+                            document.getElementById('progressFill').style.width = progress + '%';
+                            document.getElementById('progressText').textContent = `Files: ${fileCount}/${totalItems}`;
+                        }
+                        if (currentDepth < depth) createFiles(folderPath, currentDepth + 1);
+                    }
+                }
+
+                createFiles('', 1);
+                completeStage('stageFiles');
+                addDownloadLog(`✅ Created files (${totalItems} files)`, 'success');
+
+                // STAGE 3: ZIP
+                addDownloadLog('📦 Stage 3: Creating ZIP...', 'info');
+                updateStage('stageZip', true);
 
                 const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+                completeStage('stageZip');
+
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
                 link.download = 'test_data.zip';
                 link.click();
 
-                addDownloadLog(`💾 ZIP created: ${(blob.size / 1024 / 1024).toFixed(2)} MB`, 'success');
+                addDownloadLog(`✅ ZIP created: ${(blob.size / 1024 / 1024).toFixed(2)} MB`, 'success');
                 addDownloadLog(`📥 Download started!`, 'success');
+                document.getElementById('progressFill').style.width = '100%';
             } catch (error) {
                 addDownloadLog(`❌ Error: ${error.message}`, 'error');
             } finally {
@@ -738,31 +854,75 @@
             try {
                 const jsZip = await loadJSZip();
                 const zip = new jsZip.JSZip();
+                const totalFolders = Math.pow(folders, depth) - 1;
                 const totalItems = files * Math.pow(folders, depth);
-                let currentItem = 0;
+                let folderCount = 0;
+                let fileCount = 0;
 
-                function generateFolders(path, currentDepth) {
+                // STAGE 1: CREATE FOLDERS
+                addUploadLog('📁 Stage 1: Creating folder structure...', 'info');
+                document.getElementById('uploadStageFolders').classList.add('active');
+
+                function createFolders(path, currentDepth) {
                     if (currentDepth > depth) return;
                     for (let f = 0; f < folders; f++) {
-                        const folderPath = path ? `${path}/level_${currentDepth}_folder_${String(f).padStart(3, '0')}` : `level_${currentDepth}_folder_${String(f).padStart(3, '0')}`;
-                        for (let file = 0; file < files; file++) {
-                            const filePath = `test_data/${folderPath}/file_${String(file).padStart(3, '0')}.txt`;
-                            zip.file(filePath, generateRandomData(fileSize));
-                            currentItem++;
-                            const progress = (currentItem / totalItems) * 100;
-                            document.getElementById('uploadProgressFill').style.width = progress + '%';
-                            document.getElementById('uploadProgressText').textContent = `Generated: ${currentItem}/${totalItems.toLocaleString()} files`;
-                        }
-                        if (currentDepth < depth) generateFolders(folderPath, currentDepth + 1);
+                        const folderPath = path ? `${path}/f${generateName(f)}` : `f${generateName(f)}`;
+                        zip.folder(folderPath);
+                        folderCount++;
+                        const progress = (folderCount / totalFolders) * 25;
+                        document.getElementById('uploadProgressFill').style.width = progress + '%';
+                        document.getElementById('uploadProgressText').textContent = `Folders: ${folderCount}/${totalFolders}`;
+                    }
+                    for (let f = 0; f < folders; f++) {
+                        const folderPath = path ? `${path}/f${generateName(f)}` : `f${generateName(f)}`;
+                        if (currentDepth < depth) createFolders(folderPath, currentDepth + 1);
                     }
                 }
 
-                generateFolders('', 1);
-                addUploadLog(`✅ Files generated. Creating ZIP...`, 'success');
+                createFolders('test_data', 1);
+                document.getElementById('uploadStageFolders').classList.remove('active');
+                document.getElementById('uploadStageFolders').classList.add('completed');
+                addUploadLog(`✅ Created folders (${folderCount})`, 'success');
+
+                // STAGE 2: CREATE FILES
+                addUploadLog('📄 Stage 2: Creating files...', 'info');
+                document.getElementById('uploadStageFiles').classList.add('active');
+
+                function createFiles(path, currentDepth) {
+                    if (currentDepth > depth) return;
+                    for (let f = 0; f < folders; f++) {
+                        const folderPath = path ? `${path}/f${generateName(f)}` : `f${generateName(f)}`;
+                        for (let file = 0; file < files; file++) {
+                            const filePath = `${folderPath}/f${generateName(file)}.txt`;
+                            zip.file(filePath, generateRandomData(fileSize));
+                            fileCount++;
+                            const progress = 25 + (fileCount / totalItems) * 25;
+                            document.getElementById('uploadProgressFill').style.width = progress + '%';
+                            document.getElementById('uploadProgressText').textContent = `Files: ${fileCount}/${totalItems}`;
+                        }
+                        if (currentDepth < depth) createFiles(folderPath, currentDepth + 1);
+                    }
+                }
+
+                createFiles('test_data', 1);
+                document.getElementById('uploadStageFiles').classList.remove('active');
+                document.getElementById('uploadStageFiles').classList.add('completed');
+                addUploadLog(`✅ Created files (${totalItems})`, 'success');
+
+                // STAGE 3: ZIP
+                addUploadLog('📦 Stage 3: Creating ZIP...', 'info');
+                document.getElementById('uploadStageZip').classList.add('active');
+                document.getElementById('uploadProgressFill').style.width = '50%';
 
                 const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-                addUploadLog(`💾 ZIP ready: ${(blob.size / 1024 / 1024).toFixed(2)} MB`, 'info');
-                addUploadLog(`📤 Uploading to GitHub...`, 'info');
+                document.getElementById('uploadStageZip').classList.remove('active');
+                document.getElementById('uploadStageZip').classList.add('completed');
+                addUploadLog(`✅ ZIP ready: ${(blob.size / 1024 / 1024).toFixed(2)} MB`, 'success');
+
+                // STAGE 4: UPLOAD
+                addUploadLog('☁️ Stage 4: Uploading to GitHub...', 'info');
+                document.getElementById('uploadStageUpload').classList.add('active');
+                document.getElementById('uploadProgressFill').style.width = '75%';
 
                 await uploadToGitHub(token, blob, totalItems);
             } catch (error) {
@@ -792,8 +952,11 @@
                     });
 
                     if (response.ok) {
+                        document.getElementById('uploadStageUpload').classList.remove('active');
+                        document.getElementById('uploadStageUpload').classList.add('completed');
+                        document.getElementById('uploadProgressFill').style.width = '100%';
                         addUploadLog(`✅ Upload successful!`, 'success');
-                        addUploadLog(`🎉 Test data with ${fileCount.toLocaleString()} files uploaded to GitHub!`, 'success');
+                        addUploadLog(`🎉 Test data with ${fileCount.toLocaleString()} files uploaded!`, 'success');
                         uploadSuccessBox.innerHTML = `✅ Successfully uploaded! <a href="https://github.com/eliasvestman-dotcom/Upload-test" target="_blank" style="color: #155724; text-decoration: underline;">View on GitHub</a>`;
                         uploadSuccessBox.classList.add('show');
                     } else {
@@ -832,25 +995,6 @@
                 document.head.appendChild(script);
             });
         }
-
-        // HTML for progress sections
-        document.getElementById('downloadMode').innerHTML += `
-            <div class="progress-section" id="progressSection">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <div class="progress-text" id="progressText">Generating files...</div>
-            </div>
-        `;
-
-        document.getElementById('uploadMode').innerHTML += `
-            <div class="progress-section" id="uploadProgressSection">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="uploadProgressFill"></div>
-                </div>
-                <div class="progress-text" id="uploadProgressText">Generating files...</div>
-            </div>
-        `;
 
         updateDownloadStats();
         updateUploadStats();
