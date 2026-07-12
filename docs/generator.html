@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Test Data Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input[type="number"] {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .value-display {
+            min-width: 50px;
+            text-align: right;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .stats {
+            background: #f9f9f9;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 24px 0;
+            border: 1px solid #e0e0e0;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .stat-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .stat-label {
+            color: #666;
+        }
+
+        .stat-value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 16px 0;
+            font-size: 13px;
+            display: none;
+        }
+
+        .warning.show {
+            display: block;
+        }
+
+        .warning-icon {
+            margin-right: 8px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-generate:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-reset {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-reset:hover {
+            background: #d0d0d0;
+        }
+
+        .progress-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .output-section {
+            background: #f5f5f5;
+            padding: 16px;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            color: #333;
+            line-height: 1.5;
+            display: none;
+        }
+
+        .output-section.show {
+            display: block;
+        }
+
+        .output-line {
+            margin-bottom: 4px;
+        }
+
+        .success {
+            color: #28a745;
+        }
+
+        .error {
+            color: #dc3545;
+        }
+
+        .info {
+            color: #17a2b8;
+        }
+
+        .github-links {
+            background: #f0f0f0;
+            padding: 16px;
+            border-radius: 6px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .github-links.show {
+            display: block;
+        }
+
+        .link-item {
+            margin-bottom: 12px;
+        }
+
+        .link-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .link-label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .link-value {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .link-value a {
+            color: #667eea;
+            text-decoration: none;
+            word-break: break-all;
+            flex: 1;
+        }
+
+        .link-value a:hover {
+            text-decoration: underline;
+        }
+
+        .copy-btn {
+            background: none;
+            border: 1px solid #667eea;
+            color: #667eea;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .copy-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #667eea;
+            color: white;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .home-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 8px 16px;
+            background: #e0e0e0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .home-link:hover {
+            background: #d0d0d0;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 24px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .input-wrapper {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .value-display {
+                min-width: auto;
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="home-link">← Back to Home</a>
+        
+        <h1>🚀 GitHub Test Data Generator</h1>
+        <p class="subtitle">Generate customizable nested folders and files for your repository</p>
+
+        <form id="configForm">
+            <div class="form-group">
+                <label for="depth">📁 Folder Depth (levels)</label>
+                <div class="input-wrapper">
+                    <input type="number" id="depth" name="depth" min="1" max="50" value="3">
+                    <div class="value-display" id="depthDisplay">3</div>
+                </div>
+                <div class="info-box">Max 50 levels (GitHub limit). How deep to nest folders.</div>
+            </div>
+
+            <div class="form-group">
+                <label for="foldersPerLevel">📂 Folders Per Level</label>
+                <div class="input-wrapper">
+                    <input type="number" id="foldersPerLevel" name="foldersPerLevel" min="1" max="100" value="3">
+                    <div class="value-display" id="foldersDisplay">3</div>
+                </div>
+                <div class="info-box">Number of folders to create at each level.</div>
+            </div>
+
+            <div class="form-group">
+                <label for="filesPerFolder">📄 Files Per Folder</label>
+                <div class="input-wrapper">
+                    <input type="number" id="filesPerFolder" name="filesPerFolder" min="1" max="500" value="5">
+                    <div class="value-display" id="filesDisplay">5</div>
+                </div>
+                <div class="info-box">Number of files to create in each folder.</div>
+            </div>
+
+            <div class="form-group">
+                <label for="fileSize">📦 File Size (MB)</label>
+                <div class="input-wrapper">
+                    <input type="number" id="fileSize" name="fileSize" min="0.1" max="50" step="0.1" value="0.5">
+                    <div class="value-display" id="sizeDisplay">0.5 MB</div>
+                </div>
+                <div class="info-box">Max 100 MB per file (GitHub limit). We stay under 50 MB.</div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-row">
+                    <span class="stat-label">📊 Estimated Files:</span>
+                    <span class="stat-value" id="estimatedFiles">135</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">💾 Estimated Size:</span>
+                    <span class="stat-value" id="estimatedSize">67.5 MB</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">⏱️ Est. Time:</span>
+                    <span class="stat-value" id="estimatedTime">~1-2 sec</span>
+                </div>
+            </div>
+
+            <div class="warning" id="warningBox">
+                <span class="warning-icon">⚠️</span>
+                <span id="warningText"></span>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn-generate" id="generateBtn">Generate & Download</button>
+                <button type="reset" class="btn-reset" id="resetBtn">Reset</button>
+            </div>
+        </form>
+
+        <div class="progress-section" id="progressSection">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">Generating files...</div>
+        </div>
+
+        <div class="output-section" id="outputSection"></div>
+
+        <div class="github-links" id="githubLinks">
+            <div class="link-item">
+                <span class="link-label">📦 GitHub Repository</span>
+                <div class="link-value">
+                    <a href="https://github.com/eliasvestman-dotcom/Upload-test" target="_blank">https://github.com/eliasvestman-dotcom/Upload-test</a>
+                    <button class="copy-btn" onclick="copyToClipboard('https://github.com/eliasvestman-dotcom/Upload-test')">Copy</button>
+                </div>
+            </div>
+            <div class="link-item">
+                <span class="link-label">📥 Download ZIP</span>
+                <div class="link-value">
+                    <button class="copy-btn" onclick="document.getElementById('downloadZip').click()" style="border: none; background: #667eea; color: white;">⬇️ Download</button>
+                    <a id="downloadZip" style="display: none;"></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('configForm');
+        const depthInput = document.getElementById('depth');
+        const foldersInput = document.getElementById('foldersPerLevel');
+        const filesInput = document.getElementById('filesPerFolder');
+        const fileSizeInput = document.getElementById('fileSize');
+        const generateBtn = document.getElementById('generateBtn');
+        const progressSection = document.getElementById('progressSection');
+        const outputSection = document.getElementById('outputSection');
+        const githubLinks = document.getElementById('githubLinks');
+        const warningBox = document.getElementById('warningBox');
+
+        // Update displays and stats
+        function updateStats() {
+            const depth = parseInt(depthInput.value) || 1;
+            const folders = parseInt(foldersInput.value) || 1;
+            const files = parseInt(filesInput.value) || 1;
+            const fileSize = parseFloat(fileSizeInput.value) || 0.5;
+
+            document.getElementById('depthDisplay').textContent = depth;
+            document.getElementById('foldersDisplay').textContent = folders;
+            document.getElementById('filesDisplay').textContent = files;
+            document.getElementById('sizeDisplay').textContent = fileSize + ' MB';
+
+            // Calculate stats
+            const totalFiles = files * Math.pow(folders, depth);
+            const totalSizeMB = totalFiles * fileSize;
+            const totalSizeGB = totalSizeMB / 1024;
+
+            document.getElementById('estimatedFiles').textContent = totalFiles.toLocaleString();
+            document.getElementById('estimatedSize').textContent = totalSizeGB.toFixed(2) + ' GB';
+
+            // Estimate time
+            let timeEstimate = '~1-2 sec';
+            if (totalFiles > 10000) timeEstimate = '~5-10 sec';
+            if (totalFiles > 50000) timeEstimate = '~30-60 sec';
+            if (totalFiles > 100000) timeEstimate = '~2-5 min';
+            document.getElementById('estimatedTime').textContent = timeEstimate;
+
+            // Show warnings
+            if (totalSizeGB > 3) {
+                warningBox.classList.add('show');
+                document.getElementById('warningText').textContent = `⚠️ Generated data would be ${totalSizeGB.toFixed(2)} GB. GitHub recommends < 3 GB. Consider reducing file size or depth.`;
+            } else if (totalFiles > 100000) {
+                warningBox.classList.add('show');
+                document.getElementById('warningText').textContent = `⚠️ ${totalFiles.toLocaleString()} files may take a while to process.`;
+            } else {
+                warningBox.classList.remove('show');
+            }
+        }
+
+        // Event listeners
+        depthInput.addEventListener('change', updateStats);
+        foldersInput.addEventListener('change', updateStats);
+        filesInput.addEventListener('change', updateStats);
+        fileSizeInput.addEventListener('change', updateStats);
+
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await generateTestData();
+        });
+
+        // Reset form
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            setTimeout(updateStats, 50);
+            progressSection.style.display = 'none';
+            outputSection.classList.remove('show');
+            githubLinks.classList.remove('show');
+        });
+
+        async function generateTestData() {
+            const depth = parseInt(depthInput.value);
+            const folders = parseInt(foldersInput.value);
+            const files = parseInt(filesInput.value);
+            const fileSize = parseFloat(fileSizeInput.value);
+
+            generateBtn.disabled = true;
+            progressSection.style.display = 'block';
+            outputSection.innerHTML = '';
+            outputSection.classList.add('show');
+            githubLinks.classList.remove('show');
+
+            addLog('🚀 Starting test data generation...', 'info');
+            addLog(`📊 Config: Depth=${depth}, Folders=${folders}, Files=${files}, Size=${fileSize}MB`, 'info');
+
+            try {
+                const jsZip = await loadJSZip();
+                const zip = new jsZip.JSZip();
+
+                const totalItems = files * Math.pow(folders, depth);
+                let currentItem = 0;
+
+                function generateFolders(path, currentDepth) {
+                    if (currentDepth > depth) return;
+
+                    for (let f = 0; f < folders; f++) {
+                        const folderName = `level_${currentDepth}_folder_${String(f).padStart(3, '0')}`;
+                        const folderPath = path ? `${path}/${folderName}` : folderName;
+
+                        for (let file = 0; file < files; file++) {
+                            const fileName = `file_${String(file).padStart(3, '0')}.txt`;
+                            const filePath = `${folderPath}/${fileName}`;
+                            
+                            const data = generateRandomData(fileSize);
+                            zip.file(filePath, data);
+
+                            currentItem++;
+                            const progress = (currentItem / totalItems) * 100;
+                            document.getElementById('progressFill').style.width = progress + '%';
+                            document.getElementById('progressText').textContent = `Processing: ${currentItem}/${totalItems.toLocaleString()} files (${progress.toFixed(1)}%)`;
+                        }
+
+                        if (currentDepth < depth) {
+                            generateFolders(folderPath, currentDepth + 1);
+                        }
+                    }
+                }
+
+                generateFolders('test_data', 1);
+
+                addLog(`✅ Creating ZIP file with ${totalItems.toLocaleString()} files...`, 'success');
+
+                const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+                const url = URL.createObjectURL(blob);
+                
+                const link = document.getElementById('downloadZip');
+                link.href = url;
+                link.download = 'test_data.zip';
+
+                addLog(`💾 ZIP created: ${(blob.size / 1024 / 1024).toFixed(2)} MB`, 'success');
+                addLog(`📥 Download ready! Click the download button.`, 'success');
+                addLog(`\n✨ Next steps:`, 'info');
+                addLog(`1. Download the ZIP file`, 'info');
+                addLog(`2. Extract the test_data folder to your local repo`, 'info');
+                addLog(`3. Run: git add test_data/`, 'info');
+                addLog(`4. Run: git commit -m "Add test data"`, 'info');
+                addLog(`5. Run: git push origin main`, 'info');
+
+                githubLinks.classList.add('show');
+            } catch (error) {
+                addLog(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                generateBtn.disabled = false;
+            }
+        }
+
+        function generateRandomData(sizeMB) {
+            const lineLength = 100;
+            const linesNeeded = (sizeMB * 1024 * 1024) / lineLength;
+            let data = '';
+            for (let i = 0; i < linesNeeded; i++) {
+                data += `Random test data line ${i}: ` + 'x'.repeat(70) + '\n';
+            }
+            return data;
+        }
+
+        function addLog(message, type = 'info') {
+            const line = document.createElement('div');
+            line.className = `output-line ${type}`;
+            line.textContent = message;
+            outputSection.appendChild(line);
+            outputSection.scrollTop = outputSection.scrollHeight;
+        }
+
+        async function loadJSZip() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+                script.onload = () => resolve(window);
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ Copied to clipboard!');
+            });
+        }
+
+        // Initial stats
+        updateStats();
+    </script>
+</body>
+</html>
