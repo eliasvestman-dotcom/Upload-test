@@ -28,6 +28,8 @@
             max-width: 600px;
             width: 100%;
             padding: 40px;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         h1 {
@@ -60,7 +62,7 @@
             align-items: center;
         }
 
-        input[type="number"] {
+        input[type="number"], input[type="password"] {
             flex: 1;
             padding: 10px 12px;
             border: 2px solid #e0e0e0;
@@ -69,7 +71,7 @@
             transition: border-color 0.2s;
         }
 
-        input[type="number"]:focus {
+        input[type="number"]:focus, input[type="password"]:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -135,8 +137,19 @@
             display: block;
         }
 
-        .warning-icon {
-            margin-right: 8px;
+        .success-box {
+            background: #d4edda;
+            border: 1px solid #28a745;
+            color: #155724;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 16px 0;
+            font-size: 13px;
+            display: none;
+        }
+
+        .success-box.show {
+            display: block;
         }
 
         .button-group {
@@ -167,6 +180,22 @@
         }
 
         .btn-generate:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-upload {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+            color: white;
+        }
+
+        .btn-upload:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-upload:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
@@ -303,14 +332,35 @@
             color: white;
         }
 
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            background: #667eea;
-            color: white;
-            border-radius: 4px;
-            font-size: 11px;
+        .mode-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .mode-tab {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
             font-weight: 600;
+            color: #999;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .mode-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .mode-section {
+            display: none;
+        }
+
+        .mode-section.active {
+            display: block;
         }
 
         @media (max-width: 600px) {
@@ -341,107 +391,164 @@
 <body>
     <div class="container">
         <h1>🚀 GitHub Test Data Generator</h1>
-        <p class="subtitle">Generate customizable nested folders and files for your repository</p>
+        <p class="subtitle">Generate unlimited test data and upload directly to GitHub</p>
 
-        <form id="configForm">
-            <div class="form-group">
-                <label for="depth">📁 Folder Depth (levels)</label>
-                <div class="input-wrapper">
-                    <input type="number" id="depth" name="depth" min="1" max="50" value="3">
-                    <div class="value-display" id="depthDisplay">3</div>
-                </div>
-                <div class="info-box">Max 50 levels (GitHub limit). How deep to nest folders.</div>
-            </div>
-
-            <div class="form-group">
-                <label for="foldersPerLevel">📂 Folders Per Level</label>
-                <div class="input-wrapper">
-                    <input type="number" id="foldersPerLevel" name="foldersPerLevel" min="1" max="100" value="3">
-                    <div class="value-display" id="foldersDisplay">3</div>
-                </div>
-                <div class="info-box">Number of folders to create at each level.</div>
-            </div>
-
-            <div class="form-group">
-                <label for="filesPerFolder">📄 Files Per Folder</label>
-                <div class="input-wrapper">
-                    <input type="number" id="filesPerFolder" name="filesPerFolder" min="1" max="500" value="5">
-                    <div class="value-display" id="filesDisplay">5</div>
-                </div>
-                <div class="info-box">Number of files to create in each folder.</div>
-            </div>
-
-            <div class="form-group">
-                <label for="fileSize">📦 File Size (MB)</label>
-                <div class="input-wrapper">
-                    <input type="number" id="fileSize" name="fileSize" min="0.1" max="50" step="0.1" value="0.5">
-                    <div class="value-display" id="sizeDisplay">0.5 MB</div>
-                </div>
-                <div class="info-box">Max 100 MB per file (GitHub limit). We stay under 50 MB.</div>
-            </div>
-
-            <div class="stats">
-                <div class="stat-row">
-                    <span class="stat-label">📊 Estimated Files:</span>
-                    <span class="stat-value" id="estimatedFiles">135</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">💾 Estimated Size:</span>
-                    <span class="stat-value" id="estimatedSize">67.5 MB</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">⏱️ Est. Time:</span>
-                    <span class="stat-value" id="estimatedTime">~1-2 sec</span>
-                </div>
-            </div>
-
-            <div class="warning" id="warningBox">
-                <span class="warning-icon">⚠️</span>
-                <span id="warningText"></span>
-            </div>
-
-            <div class="button-group">
-                <button type="submit" class="btn-generate" id="generateBtn">Generate & Download</button>
-                <button type="reset" class="btn-reset" id="resetBtn">Reset</button>
-            </div>
-        </form>
-
-        <div class="progress-section" id="progressSection">
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
-            </div>
-            <div class="progress-text" id="progressText">Generating files...</div>
+        <div class="mode-tabs">
+            <button class="mode-tab active" onclick="switchMode('download')">📥 Download Mode</button>
+            <button class="mode-tab" onclick="switchMode('upload')">📤 Direct Upload</button>
         </div>
 
-        <div class="output-section" id="outputSection"></div>
+        <!-- DOWNLOAD MODE -->
+        <div class="mode-section active" id="downloadMode">
+            <form id="downloadForm">
+                <div class="form-group">
+                    <label for="depth">📁 Folder Depth (levels)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="depth" name="depth" min="1" value="3">
+                        <div class="value-display" id="depthDisplay">3</div>
+                    </div>
+                    <div class="info-box">How deep to nest folders (unlimited).</div>
+                </div>
 
-        <div class="github-links" id="githubLinks">
-            <div class="link-item">
-                <span class="link-label">📦 GitHub Repository</span>
-                <div class="link-value">
-                    <a href="https://github.com/eliasvestman-dotcom/Upload-test" target="_blank">https://github.com/eliasvestman-dotcom/Upload-test</a>
-                    <button class="copy-btn" onclick="copyToClipboard('https://github.com/eliasvestman-dotcom/Upload-test')">Copy</button>
+                <div class="form-group">
+                    <label for="foldersPerLevel">📂 Folders Per Level</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="foldersPerLevel" name="foldersPerLevel" min="1" value="3">
+                        <div class="value-display" id="foldersDisplay">3</div>
+                    </div>
+                    <div class="info-box">Number of folders to create at each level (unlimited).</div>
                 </div>
-            </div>
-            <div class="link-item">
-                <span class="link-label">🌐 GitHub Pages (This Site)</span>
-                <div class="link-value">
-                    <a href="https://eliasvestman-dotcom.github.io/Upload-test/" target="_blank">https://eliasvestman-dotcom.github.io/Upload-test/</a>
-                    <button class="copy-btn" onclick="copyToClipboard('https://eliasvestman-dotcom.github.io/Upload-test/')">Copy</button>
+
+                <div class="form-group">
+                    <label for="filesPerFolder">📄 Files Per Folder</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="filesPerFolder" name="filesPerFolder" min="1" value="5">
+                        <div class="value-display" id="filesDisplay">5</div>
+                    </div>
+                    <div class="info-box">Number of files to create in each folder (unlimited).</div>
                 </div>
-            </div>
-            <div class="link-item">
-                <span class="link-label">📥 Download ZIP</span>
-                <div class="link-value">
-                    <button class="copy-btn" onclick="document.getElementById('downloadZip').click()" style="border: none; background: #667eea; color: white;">⬇️ Download</button>
-                    <a id="downloadZip" style="display: none;"></a>
+
+                <div class="form-group">
+                    <label for="fileSize">📦 File Size (MB)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="fileSize" name="fileSize" min="0.1" step="0.1" value="0.5">
+                        <div class="value-display" id="sizeDisplay">0.5 MB</div>
+                    </div>
+                    <div class="info-box">Size of each file in MB (unlimited).</div>
                 </div>
-            </div>
+
+                <div class="stats">
+                    <div class="stat-row">
+                        <span class="stat-label">📊 Estimated Files:</span>
+                        <span class="stat-value" id="estimatedFiles">135</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">💾 Estimated Size:</span>
+                        <span class="stat-value" id="estimatedSize">67.5 MB</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">⏱️ Est. Time:</span>
+                        <span class="stat-value" id="estimatedTime">~1-2 sec</span>
+                    </div>
+                </div>
+
+                <div class="warning" id="warningBox"></div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn-generate" id="generateBtn">Generate & Download</button>
+                    <button type="reset" class="btn-reset">Reset</button>
+                </div>
+            </form>
+
+            <div class="progress-section" id="progressSection"></div>
+            <div class="output-section" id="outputSection"></div>
+            <div class="github-links" id="githubLinks"></div>
+        </div>
+
+        <!-- UPLOAD MODE -->
+        <div class="mode-section" id="uploadMode">
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label for="githubToken">🔑 GitHub Personal Access Token</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="githubToken" name="githubToken" placeholder="ghp_xxxxxxxxxxxx" required>
+                    </div>
+                    <div class="info-box">
+                        🔐 Secure: Only used for this session, never stored.
+                        <br><br>
+                        📋 Create token at: <a href="https://github.com/settings/tokens" target="_blank" style="color: #667eea; text-decoration: underline;">github.com/settings/tokens</a>
+                        <br>
+                        ✅ Permissions needed: repo (full control)
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="uploadDepth">📁 Folder Depth (levels)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="uploadDepth" name="uploadDepth" min="1" value="3">
+                        <div class="value-display" id="uploadDepthDisplay">3</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="uploadFolders">📂 Folders Per Level</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="uploadFolders" name="uploadFolders" min="1" value="3">
+                        <div class="value-display" id="uploadFoldersDisplay">3</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="uploadFiles">📄 Files Per Folder</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="uploadFiles" name="uploadFiles" min="1" value="5">
+                        <div class="value-display" id="uploadFilesDisplay">5</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="uploadSize">📦 File Size (MB)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="uploadSize" name="uploadSize" min="0.1" step="0.1" value="0.5">
+                        <div class="value-display" id="uploadSizeDisplay">0.5 MB</div>
+                    </div>
+                </div>
+
+                <div class="stats" id="uploadStats">
+                    <div class="stat-row">
+                        <span class="stat-label">📊 Estimated Files:</span>
+                        <span class="stat-value" id="uploadEstimatedFiles">135</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">💾 Estimated Size:</span>
+                        <span class="stat-value" id="uploadEstimatedSize">67.5 MB</span>
+                    </div>
+                </div>
+
+                <div class="warning" id="uploadWarningBox"></div>
+                <div class="success-box" id="uploadSuccessBox"></div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn-upload" id="uploadBtn">🚀 Generate & Upload</button>
+                    <button type="reset" class="btn-reset">Reset</button>
+                </div>
+            </form>
+
+            <div class="progress-section" id="uploadProgressSection"></div>
+            <div class="output-section" id="uploadOutputSection"></div>
         </div>
     </div>
 
     <script>
-        const form = document.getElementById('configForm');
+        function switchMode(mode) {
+            document.querySelectorAll('.mode-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(mode + 'Mode').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // DOWNLOAD MODE
+        const downloadForm = document.getElementById('downloadForm');
         const depthInput = document.getElementById('depth');
         const foldersInput = document.getElementById('foldersPerLevel');
         const filesInput = document.getElementById('filesPerFolder');
@@ -452,8 +559,7 @@
         const githubLinks = document.getElementById('githubLinks');
         const warningBox = document.getElementById('warningBox');
 
-        // Update displays and stats
-        function updateStats() {
+        function updateDownloadStats() {
             const depth = parseInt(depthInput.value) || 1;
             const folders = parseInt(foldersInput.value) || 1;
             const files = parseInt(filesInput.value) || 1;
@@ -464,128 +570,89 @@
             document.getElementById('filesDisplay').textContent = files;
             document.getElementById('sizeDisplay').textContent = fileSize + ' MB';
 
-            // Calculate stats
             const totalFiles = files * Math.pow(folders, depth);
-            const totalSizeMB = totalFiles * fileSize;
-            const totalSizeGB = totalSizeMB / 1024;
+            const totalSizeGB = (totalFiles * fileSize) / 1024;
 
             document.getElementById('estimatedFiles').textContent = totalFiles.toLocaleString();
             document.getElementById('estimatedSize').textContent = totalSizeGB.toFixed(2) + ' GB';
 
-            // Estimate time
             let timeEstimate = '~1-2 sec';
             if (totalFiles > 10000) timeEstimate = '~5-10 sec';
             if (totalFiles > 50000) timeEstimate = '~30-60 sec';
             if (totalFiles > 100000) timeEstimate = '~2-5 min';
             document.getElementById('estimatedTime').textContent = timeEstimate;
 
-            // Show warnings
-            if (totalSizeGB > 3) {
+            warningBox.innerHTML = '';
+            if (totalSizeGB > 100) {
+                warningBox.innerHTML = `⚠️ Very large: ${totalSizeGB.toFixed(2)} GB. May take a long time and significant memory.`;
                 warningBox.classList.add('show');
-                document.getElementById('warningText').textContent = `⚠️ Generated data would be ${totalSizeGB.toFixed(2)} GB. GitHub recommends < 3 GB. Consider reducing file size or depth.`;
-            } else if (totalFiles > 100000) {
+            } else if (totalSizeGB > 10) {
+                warningBox.innerHTML = `⚠️ Large: ${totalSizeGB.toFixed(2)} GB. May take several minutes.`;
                 warningBox.classList.add('show');
-                document.getElementById('warningText').textContent = `⚠️ ${totalFiles.toLocaleString()} files may take a while to process.`;
-            } else {
-                warningBox.classList.remove('show');
+            } else if (totalFiles > 1000000) {
+                warningBox.innerHTML = `⚠️ ${totalFiles.toLocaleString()} files will take considerable time.`;
+                warningBox.classList.add('show');
             }
         }
 
-        // Event listeners
-        depthInput.addEventListener('change', updateStats);
-        foldersInput.addEventListener('change', updateStats);
-        filesInput.addEventListener('change', updateStats);
-        fileSizeInput.addEventListener('change', updateStats);
+        // UPLOAD MODE
+        const uploadForm = document.getElementById('uploadForm');
+        const uploadDepthInput = document.getElementById('uploadDepth');
+        const uploadFoldersInput = document.getElementById('uploadFolders');
+        const uploadFilesInput = document.getElementById('uploadFiles');
+        const uploadSizeInput = document.getElementById('uploadSize');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadProgressSection = document.getElementById('uploadProgressSection');
+        const uploadOutputSection = document.getElementById('uploadOutputSection');
+        const uploadWarningBox = document.getElementById('uploadWarningBox');
+        const uploadSuccessBox = document.getElementById('uploadSuccessBox');
 
-        // Form submission
-        form.addEventListener('submit', async (e) => {
+        function updateUploadStats() {
+            const depth = parseInt(uploadDepthInput.value) || 1;
+            const folders = parseInt(uploadFoldersInput.value) || 1;
+            const files = parseInt(uploadFilesInput.value) || 1;
+            const fileSize = parseFloat(uploadSizeInput.value) || 0.5;
+
+            document.getElementById('uploadDepthDisplay').textContent = depth;
+            document.getElementById('uploadFoldersDisplay').textContent = folders;
+            document.getElementById('uploadFilesDisplay').textContent = files;
+            document.getElementById('uploadSizeDisplay').textContent = fileSize + ' MB';
+
+            const totalFiles = files * Math.pow(folders, depth);
+            const totalSizeGB = (totalFiles * fileSize) / 1024;
+
+            document.getElementById('uploadEstimatedFiles').textContent = totalFiles.toLocaleString();
+            document.getElementById('uploadEstimatedSize').textContent = totalSizeGB.toFixed(2) + ' GB';
+
+            uploadWarningBox.innerHTML = '';
+            if (totalSizeGB > 100) {
+                uploadWarningBox.innerHTML = `⚠️ Very large: ${totalSizeGB.toFixed(2)} GB. Upload will take a very long time.`;
+                uploadWarningBox.classList.add('show');
+            } else if (totalSizeGB > 10) {
+                uploadWarningBox.innerHTML = `⚠️ Large: ${totalSizeGB.toFixed(2)} GB. Upload may take several minutes.`;
+                uploadWarningBox.classList.add('show');
+            }
+        }
+
+        depthInput.addEventListener('change', updateDownloadStats);
+        foldersInput.addEventListener('change', updateDownloadStats);
+        filesInput.addEventListener('change', updateDownloadStats);
+        fileSizeInput.addEventListener('change', updateDownloadStats);
+
+        uploadDepthInput.addEventListener('change', updateUploadStats);
+        uploadFoldersInput.addEventListener('change', updateUploadStats);
+        uploadFilesInput.addEventListener('change', updateUploadStats);
+        uploadSizeInput.addEventListener('change', updateUploadStats);
+
+        downloadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            await generateTestData();
+            await generateAndDownload();
         });
 
-        // Reset form
-        document.getElementById('resetBtn').addEventListener('click', () => {
-            setTimeout(updateStats, 50);
-            progressSection.style.display = 'none';
-            outputSection.classList.remove('show');
-            githubLinks.classList.remove('show');
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await generateAndUpload();
         });
-
-        async function generateTestData() {
-            const depth = parseInt(depthInput.value);
-            const folders = parseInt(foldersInput.value);
-            const files = parseInt(filesInput.value);
-            const fileSize = parseFloat(fileSizeInput.value);
-
-            generateBtn.disabled = true;
-            progressSection.style.display = 'block';
-            outputSection.innerHTML = '';
-            outputSection.classList.add('show');
-            githubLinks.classList.remove('show');
-
-            addLog('🚀 Starting test data generation...', 'info');
-            addLog(`📊 Config: Depth=${depth}, Folders=${folders}, Files=${files}, Size=${fileSize}MB`, 'info');
-
-            try {
-                const jsZip = await loadJSZip();
-                const zip = new jsZip.JSZip();
-
-                const totalItems = files * Math.pow(folders, depth);
-                let currentItem = 0;
-
-                function generateFolders(path, currentDepth) {
-                    if (currentDepth > depth) return;
-
-                    for (let f = 0; f < folders; f++) {
-                        const folderName = `level_${currentDepth}_folder_${String(f).padStart(3, '0')}`;
-                        const folderPath = path ? `${path}/${folderName}` : folderName;
-
-                        for (let file = 0; file < files; file++) {
-                            const fileName = `file_${String(file).padStart(3, '0')}.txt`;
-                            const filePath = `${folderPath}/${fileName}`;
-                            
-                            const data = generateRandomData(fileSize);
-                            zip.file(filePath, data);
-
-                            currentItem++;
-                            const progress = (currentItem / totalItems) * 100;
-                            document.getElementById('progressFill').style.width = progress + '%';
-                            document.getElementById('progressText').textContent = `Processing: ${currentItem}/${totalItems.toLocaleString()} files (${progress.toFixed(1)}%)`;
-                        }
-
-                        if (currentDepth < depth) {
-                            generateFolders(folderPath, currentDepth + 1);
-                        }
-                    }
-                }
-
-                generateFolders('test_data', 1);
-
-                addLog(`✅ Creating ZIP file with ${totalItems.toLocaleString()} files...`, 'success');
-
-                const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-                const url = URL.createObjectURL(blob);
-                
-                const link = document.getElementById('downloadZip');
-                link.href = url;
-                link.download = 'test_data.zip';
-
-                addLog(`💾 ZIP created: ${(blob.size / 1024 / 1024).toFixed(2)} MB`, 'success');
-                addLog(`📥 Download ready! Click the download button.`, 'success');
-                addLog(`\n✨ Next steps:`, 'info');
-                addLog(`1. Download the ZIP file`, 'info');
-                addLog(`2. Extract the test_data folder to your local repo`, 'info');
-                addLog(`3. Run: git add test_data/`, 'info');
-                addLog(`4. Run: git commit -m "Add test data"`, 'info');
-                addLog(`5. Run: git push origin main`, 'info');
-
-                githubLinks.classList.add('show');
-            } catch (error) {
-                addLog(`❌ Error: ${error.message}`, 'error');
-            } finally {
-                generateBtn.disabled = false;
-            }
-        }
 
         function generateRandomData(sizeMB) {
             const lineLength = 100;
@@ -597,12 +664,163 @@
             return data;
         }
 
-        function addLog(message, type = 'info') {
+        async function generateAndDownload() {
+            const depth = parseInt(depthInput.value);
+            const folders = parseInt(foldersInput.value);
+            const files = parseInt(filesInput.value);
+            const fileSize = parseFloat(fileSizeInput.value);
+
+            generateBtn.disabled = true;
+            progressSection.style.display = 'block';
+            outputSection.innerHTML = '';
+            outputSection.classList.add('show');
+            githubLinks.innerHTML = '';
+            githubLinks.classList.remove('show');
+
+            addDownloadLog('🚀 Starting generation...', 'info');
+
+            try {
+                const jsZip = await loadJSZip();
+                const zip = new jsZip.JSZip();
+                const totalItems = files * Math.pow(folders, depth);
+                let currentItem = 0;
+
+                function generateFolders(path, currentDepth) {
+                    if (currentDepth > depth) return;
+                    for (let f = 0; f < folders; f++) {
+                        const folderPath = path ? `${path}/level_${currentDepth}_folder_${String(f).padStart(3, '0')}` : `level_${currentDepth}_folder_${String(f).padStart(3, '0')}`;
+                        for (let file = 0; file < files; file++) {
+                            const filePath = `${folderPath}/file_${String(file).padStart(3, '0')}.txt`;
+                            zip.file(filePath, generateRandomData(fileSize));
+                            currentItem++;
+                            const progress = (currentItem / totalItems) * 100;
+                            document.getElementById('progressFill').style.width = progress + '%';
+                            document.getElementById('progressText').textContent = `${currentItem}/${totalItems.toLocaleString()} files (${progress.toFixed(1)}%)`;
+                        }
+                        if (currentDepth < depth) generateFolders(folderPath, currentDepth + 1);
+                    }
+                }
+
+                generateFolders('test_data', 1);
+                addDownloadLog(`✅ Creating ZIP with ${totalItems.toLocaleString()} files...`, 'success');
+
+                const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'test_data.zip';
+                link.click();
+
+                addDownloadLog(`💾 ZIP created: ${(blob.size / 1024 / 1024).toFixed(2)} MB`, 'success');
+                addDownloadLog(`📥 Download started!`, 'success');
+            } catch (error) {
+                addDownloadLog(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                generateBtn.disabled = false;
+            }
+        }
+
+        async function generateAndUpload() {
+            const token = document.getElementById('githubToken').value;
+            const depth = parseInt(uploadDepthInput.value);
+            const folders = parseInt(uploadFoldersInput.value);
+            const files = parseInt(uploadFilesInput.value);
+            const fileSize = parseFloat(uploadSizeInput.value);
+
+            uploadBtn.disabled = true;
+            uploadProgressSection.style.display = 'block';
+            uploadOutputSection.innerHTML = '';
+            uploadOutputSection.classList.add('show');
+            uploadSuccessBox.classList.remove('show');
+
+            addUploadLog('🚀 Starting generation and upload...', 'info');
+
+            try {
+                const jsZip = await loadJSZip();
+                const zip = new jsZip.JSZip();
+                const totalItems = files * Math.pow(folders, depth);
+                let currentItem = 0;
+
+                function generateFolders(path, currentDepth) {
+                    if (currentDepth > depth) return;
+                    for (let f = 0; f < folders; f++) {
+                        const folderPath = path ? `${path}/level_${currentDepth}_folder_${String(f).padStart(3, '0')}` : `level_${currentDepth}_folder_${String(f).padStart(3, '0')}`;
+                        for (let file = 0; file < files; file++) {
+                            const filePath = `test_data/${folderPath}/file_${String(file).padStart(3, '0')}.txt`;
+                            zip.file(filePath, generateRandomData(fileSize));
+                            currentItem++;
+                            const progress = (currentItem / totalItems) * 100;
+                            document.getElementById('uploadProgressFill').style.width = progress + '%';
+                            document.getElementById('uploadProgressText').textContent = `Generated: ${currentItem}/${totalItems.toLocaleString()} files`;
+                        }
+                        if (currentDepth < depth) generateFolders(folderPath, currentDepth + 1);
+                    }
+                }
+
+                generateFolders('', 1);
+                addUploadLog(`✅ Files generated. Creating ZIP...`, 'success');
+
+                const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+                addUploadLog(`💾 ZIP ready: ${(blob.size / 1024 / 1024).toFixed(2)} MB`, 'info');
+                addUploadLog(`📤 Uploading to GitHub...`, 'info');
+
+                await uploadToGitHub(token, blob, totalItems);
+            } catch (error) {
+                addUploadLog(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                uploadBtn.disabled = false;
+            }
+        }
+
+        async function uploadToGitHub(token, blob, fileCount) {
+            try {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const content = btoa(String.fromCharCode.apply(null, new Uint8Array(e.target.result)));
+                    
+                    const response = await fetch('https://api.github.com/repos/eliasvestman-dotcom/Upload-test/contents/test_data.zip', {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `token ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: `Add test data (${fileCount.toLocaleString()} files)`,
+                            content: content,
+                            branch: 'main'
+                        })
+                    });
+
+                    if (response.ok) {
+                        addUploadLog(`✅ Upload successful!`, 'success');
+                        addUploadLog(`🎉 Test data with ${fileCount.toLocaleString()} files uploaded to GitHub!`, 'success');
+                        uploadSuccessBox.innerHTML = `✅ Successfully uploaded! <a href="https://github.com/eliasvestman-dotcom/Upload-test" target="_blank" style="color: #155724; text-decoration: underline;">View on GitHub</a>`;
+                        uploadSuccessBox.classList.add('show');
+                    } else {
+                        const error = await response.json();
+                        addUploadLog(`❌ Upload failed: ${error.message}`, 'error');
+                    }
+                };
+                reader.readAsArrayBuffer(blob);
+            } catch (error) {
+                addUploadLog(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        function addDownloadLog(msg, type) {
             const line = document.createElement('div');
             line.className = `output-line ${type}`;
-            line.textContent = message;
+            line.textContent = msg;
             outputSection.appendChild(line);
             outputSection.scrollTop = outputSection.scrollHeight;
+        }
+
+        function addUploadLog(msg, type) {
+            const line = document.createElement('div');
+            line.className = `output-line ${type}`;
+            line.textContent = msg;
+            uploadOutputSection.appendChild(line);
+            uploadOutputSection.scrollTop = uploadOutputSection.scrollHeight;
         }
 
         async function loadJSZip() {
@@ -615,14 +833,27 @@
             });
         }
 
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert('✅ Copied to clipboard!');
-            });
-        }
+        // HTML for progress sections
+        document.getElementById('downloadMode').innerHTML += `
+            <div class="progress-section" id="progressSection">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">Generating files...</div>
+            </div>
+        `;
 
-        // Initial stats
-        updateStats();
+        document.getElementById('uploadMode').innerHTML += `
+            <div class="progress-section" id="uploadProgressSection">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="uploadProgressFill"></div>
+                </div>
+                <div class="progress-text" id="uploadProgressText">Generating files...</div>
+            </div>
+        `;
+
+        updateDownloadStats();
+        updateUploadStats();
     </script>
 </body>
 </html>
