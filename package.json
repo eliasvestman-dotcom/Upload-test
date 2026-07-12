@@ -1,0 +1,10 @@
+{
+  "name": "GitHub Test Data Generator",
+  "description": "Generate customizable nested folder/file structures for testing",
+  "version": "1.0.0",
+  "homepage": "https://github.com/eliasvestman-dotcom/Upload-test",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eliasvestman-dotcom/Upload-test.git"
+  }
+}
